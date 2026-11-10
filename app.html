@@ -320,7 +320,7 @@
       <p class="small">영업시간이 분명한 곳만 휴대폰 시계로 계산해요. 공휴일은 반영하지 않아요.</p>
       <h2>상세 화면</h2>
       <ul>
-        <li>영업시간·가격은 첫 줄이 대표예요. "학생 메모 더 보기"로 나머지를 펼쳐요.</li>
+        <li>영업시간·가격은 첫 줄이 대표예요. "메모 더 보기"로 나머지를 펼쳐요.</li>
         <li>오른쪽 위 <b>공유</b>로 링크를 보내고, <b>별</b>로 즐겨찾기에 담아요.</li>
         <li><b>지도에서 보기</b>는 학생이 적은 네이버 지도 링크, <b>이름으로 검색</b>은 네이버 지도 검색이에요.</li>
       </ul>
@@ -622,6 +622,7 @@
       if (!h.days[day]) return false;
       return mins >= h.s && mins < h.e;
     }
+    if (h.s === 0 && h.e >= 1440 && h.days[d]) return { s: 'open', label: '24시간', long: '운행 중 · 24시간 영업' };
     var on = inside(d, t) || (h.e > 1440 && inside((d + 6) % 7, t + 1440));
     if (!on) {
       var nx = nextOpen(h, d, t);
@@ -802,7 +803,7 @@
     dd.appendChild(el('div', { class: 'lead', text: arr[0] }));
     if (arr.length > 1) {
       var d = el('details'), ul = el('ul');
-      d.appendChild(el('summary', { text: '학생 메모 ' + (arr.length - 1) + '개 더 보기' }));
+      d.appendChild(el('summary', { text: '메모 ' + (arr.length - 1) + '개 더 보기' }));
       arr.slice(1).forEach(function (x) { ul.appendChild(el('li', { text: x })); });
       d.appendChild(ul); dd.appendChild(d);
     }
