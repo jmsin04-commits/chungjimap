@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E4FA3">
+<title>KNUT 레일패스 · 한국교통대 정보</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ground: #1E4FA3;
+    --paper: #FBF8F1;
+    --ink: #1F2328;
+    --muted: #5B6068;
+    --soft: #D7E2F3;
+    --dash: #C9C2B2;
+    --gold: #F2C230;
+    --red: #B3261E;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: 'Noto Sans KR', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  .app {
+    position: relative;
+    max-width: 480px;
+    min-height: 100%;
+    margin: 0 auto;
+    background: var(--ground);
+    overflow-x: hidden;
+  }
+  .rails {
+    position: absolute; inset: 0 0 auto 0; height: 340px; pointer-events: none; opacity: .12;
+  }
+  .screen { position: relative; padding: calc(env(safe-area-inset-top) + 20px) 20px 110px; display: flex; flex-direction: column; gap: 14px; }
+  .screen[hidden] { display: none; }
+
+  /* top bar */
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: .16em; color: var(--soft); }
+  .round {
+    width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 22px; background: #FFFFFF22; color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .round svg { width: 22px; height: 22px; }
+  .title { margin: 0; color: #fff; font-size: 26px; font-weight: 900; letter-spacing: -.02em; }
+  .subtitle { display: flex; flex-direction: column; color: #fff; min-width: 0; }
+  .subtitle h1 { margin: 0; font-size: 22px; font-weight: 900; }
+
+  /* ticket */
+  .ticket {
+    position: relative; display: flex; min-height: 76px; border-radius: 10px; background: var(--paper); color: var(--ink);
+    text-align: left; border: 0; padding: 0; width: 100%;
+  }
+  .ticket:focus-visible, .round:focus-visible, .chip:focus-visible, .seg button:focus-visible, .btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .ticket .main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 10px 14px; }
+  .ticket .route { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .ticket .route span:last-child { font-family: var(--mono); }
+  .ticket .name { font-size: 18px; font-weight: 900; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ticket .meta { font-size: 12px; color: #3F454D; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ticket .stub { flex-shrink: 0; width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-left: 2px dashed var(--dash); }
+  .ticket .stub small { font-size: 11px; color: var(--muted); }
+  .ticket .stub b { font-family: var(--mono); font-size: 20px; color: var(--ground); }
+  .ticket::before, .ticket::after {
+    content: ""; position: absolute; right: 72px; width: 16px; height: 16px; border-radius: 50%; background: var(--ground);
+  }
+  .ticket::before { top: -8px; }
+  .ticket::after { bottom: -8px; }
+
+  /* platforms (home) */
+  .platform-head { display: flex; align-items: center; justify-content: space-between; color: #fff; }
+  .platform-head .no { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--gold); margin-right: 8px; }
+  .platform-head .nm { font-size: 15px; font-weight: 700; }
+  .track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -20px; }
+  .track::-webkit-scrollbar { display: none; }
+  .page { flex: 0 0 100%; scroll-snap-align: start; padding: 8px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .dots { display: flex; justify-content: center; gap: 4px; }
+  .dots button { width: 44px; height: 24px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
+  .dots i { display: block; height: 8px; width: 8px; border-radius: 4px; background: #FFFFFF66; transition: width .3s; }
+  .dots button[aria-current="true"] i { width: 24px; background: #fff; }
+
+  /* segmented + chips */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: #FFFFFF1F; }
+  .seg button { min-height: 44px; border: 0; border-radius: 9px; background: transparent; color: #fff; font-size: 14px; font-weight: 700; }
+  .seg button[aria-pressed="true"] { background: var(--paper); color: var(--ground); }
+  .search { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 14px; border-radius: 12px; background: var(--paper); }
+  .search svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 15px; color: var(--ink); }
+  .chips { display: flex; gap: 6px; overflow-x: auto; margin: 0 -20px; padding: 2px 20px 4px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0; min-height: 36px; padding: 0 12px; border-radius: 18px; border: 1.5px solid #FFFFFF66; background: transparent;
+    color: #fff; font-size: 13px; font-weight: 700; white-space: nowrap;
+  }
+  .chip small { font-family: var(--mono); font-size: 11px; opacity: .75; margin-left: 2px; }
+  .chip[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+  .chip.region[aria-pressed="true"] { background: var(--paper); border-color: var(--paper); color: var(--ground); }
+  .summary { display: flex; align-items: center; justify-content: space-between; min-height: 32px; color: var(--soft); font-size: 12px; gap: 8px; }
+  .summary button { min-height: 32px; padding: 0 10px; border: 0; border-radius: 16px; background: #FFFFFF22; color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .empty { padding: 32px 16px; border-radius: 10px; border: 1.5px dashed #FFFFFF66; color: #fff; text-align: center; font-size: 14px; line-height: 1.6; }
+
+  /* detail */
+  .pass { border-radius: 16px; background: var(--paper); overflow: hidden; }
+  .pass header { padding: 16px 18px 14px; background: var(--ink); color: var(--paper); display: flex; flex-direction: column; gap: 2px; }
+  .pass header small { font-size: 12px; color: #C9CED6; }
+  .pass header h1 { margin: 0; font-size: 23px; font-weight: 900; letter-spacing: -.01em; line-height: 1.3; }
+  .pass .cut { border-top: 2px dashed var(--dash); margin: 0 14px; }
+  .pass dl { margin: 0; padding: 14px 18px 8px; display: grid; grid-template-columns: 64px 1fr; gap: 12px; font-size: 14px; }
+  .pass dt { color: var(--muted); }
+  .pass dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+  .pass dd .lead { font-weight: 700; }
+  .pass dd .none { color: #8A8F96; }
+  .pass details { margin-top: 6px; font-size: 13px; color: #3F454D; }
+  .pass summary { cursor: pointer; color: var(--ground); font-weight: 700; font-size: 12px; min-height: 28px; display: flex; align-items: center; }
+  .pass details ul { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; line-height: 1.5; }
+  .tagrow { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 18px 14px; }
+  .tagrow span { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: #E8EEF8; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; padding: 12px 18px 16px; }
+  .stats div { display: flex; flex-direction: column; }
+  .stats small { font-size: 11px; color: var(--muted); }
+  .stats b { font-family: var(--mono); font-size: 20px; color: var(--ground); }
+  .stats .date { font-family: var(--mono); font-size: 15px; font-weight: 700; margin-top: 5px; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn {
+    min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 12px;
+    font-size: 15px; font-weight: 700; border: 2px solid var(--paper); background: transparent; color: #fff;
+  }
+  .btn.solid { background: var(--paper); color: var(--ground); }
+  .btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+  .btn svg { width: 18px; height: 18px; }
+  .note { font-size: 12px; color: var(--soft); text-align: center; line-height: 1.6; }
+  .fav-on svg { fill: var(--gold); stroke: var(--gold); }
+
+  /* soon */
+  .soon { padding: 28px 20px; border-radius: 16px; background: var(--paper); display: flex; flex-direction: column; gap: 8px; }
+  .soon b { font-size: 20px; }
+  .soon p { margin: 0; font-size: 14px; color: #3F454D; line-height: 1.6; }
+
+  /* tab bar */
+  .tabs {
+    position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 10;
+    display: grid; grid-template-columns: repeat(3, 1fr); background: var(--paper); border-radius: 20px 20px 0 0;
+    padding: 6px 16px calc(env(safe-area-inset-bottom) + 8px); box-shadow: 0 -4px 16px #0000001F;
+  }
+  .tabs a { min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; color: var(--muted); }
+  .tabs a[aria-current="page"] { color: var(--ground); font-weight: 700; }
+  .tabs svg { width: 22px; height: 22px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); z-index: 20; max-width: 90%;
+    background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 22px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .loading { color: #fff; text-align: center; padding: 40px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <svg class="rails" viewBox="0 0 480 340" preserveAspectRatio="none" aria-hidden="true">
+    <g stroke="#fff" stroke-linecap="round"><line x1="-60" y1="330" x2="560" y2="-40" stroke-width="3"/><line x1="-40" y1="360" x2="580" y2="-10" stroke-width="3"/></g>
+    <g stroke="#fff" stroke-width="8"><line x1="10" y1="290" x2="30" y2="322"/><line x1="70" y1="254" x2="90" y2="286"/><line x1="130" y1="218" x2="150" y2="250"/><line x1="190" y1="182" x2="210" y2="214"/><line x1="250" y1="146" x2="270" y2="178"/><line x1="310" y1="110" x2="330" y2="142"/><line x1="370" y1="74" x2="390" y2="106"/><line x1="430" y1="38" x2="450" y2="70"/></g>
+  </svg>
+
+  <!-- 홈 -->
+  <section class="screen" id="s-home" aria-label="홈">
+    <div class="bar">
+      <span class="eyebrow">KNUT RAIL PASS</span>
+    </div>
+    <h1 class="title">오늘은 어디로 떠날까요?</h1>
+    <div class="platform-head">
+      <div><span class="no" id="pf-no">1번 승강장</span><span class="nm" id="pf-name"></span></div>
+      <div style="display:flex;gap:6px">
+        <button class="round" id="pf-prev" aria-label="이전 승강장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button class="round" id="pf-next" aria-label="다음 승강장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+    <div class="track" id="track"></div>
+    <div class="dots" id="dots" role="group" aria-label="승강장 선택"></div>
+  </section>
+
+  <!-- 골목지도 목록 -->
+  <section class="screen" id="s-alley" aria-label="골목지도" hidden>
+    <div class="bar" style="justify-content:flex-start">
+      <a class="round" href="#/" aria-label="홈으로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <div class="subtitle"><span class="eyebrow" style="font-size:11px">KNUT → ALLEY MAP</span><h1>충주캠퍼스 골목지도</h1></div>
+    </div>
+    <div class="seg" id="kind" role="group" aria-label="분류"></div>
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#5B6068" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <span style="position:absolute;width:1px;height:1px;overflow:hidden">이름으로 찾기</span>
+      <input id="q" type="search" placeholder="가게·장소 이름으로 찾기" autocomplete="off">
+    </label>
+    <div class="chips" id="regions" role="group" aria-label="지역"></div>
+    <div class="chips" id="tags" role="group" aria-label="태그로 거르기"></div>
+    <div class="summary"><span id="sum"></span><button id="clear" hidden>필터 초기화</button></div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <!-- 상세 -->
+  <section class="screen" id="s-place" aria-label="장소 상세" hidden>
+    <div class="bar">
+      <button class="round" id="back" aria-label="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <span class="eyebrow" style="font-size:11px">BOARDING PASS</span>
+      <button class="round" id="fav" aria-label="즐겨찾기" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg></button>
+    </div>
+    <div id="pass"></div>
+    <div class="actions">
+      <a class="btn solid" id="maplink" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>지도에서 보기</a>
+      <a class="btn" id="searchlink" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>이름으로 검색</a>
+    </div>
+    <p class="note">학생들이 조사한 정보예요(2026년 10월 확인).<br>영업시간과 가격은 바뀔 수 있으니 방문 전에 지도에서 확인하세요.</p>
+  </section>
+
+  <!-- 즐겨찾기 -->
+  <section class="screen" id="s-fav" aria-label="즐겨찾기" hidden>
+    <div class="bar"><span class="eyebrow">MY TICKETS</span></div>
+    <h1 class="title">즐겨찾기한 승차권</h1>
+    <div class="list" id="favlist"></div>
+  </section>
+
+  <!-- 준비 중 -->
+  <section class="screen" id="s-soon" aria-label="준비 중" hidden>
+    <div class="bar" style="justify-content:flex-start">
+      <a class="round" href="#/" aria-label="홈으로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <div class="subtitle"><span class="eyebrow" style="font-size:11px" id="soon-en"></span><h1 id="soon-title"></h1></div>
+    </div>
+    <div class="soon">
+      <b>아직 운행 준비 중인 노선이에요</b>
+      <p>이 메뉴는 정보 연결을 준비하고 있어요. 지금은 골목지도 노선만 운행 중입니다.</p>
+    </div>
+    <a class="btn solid" href="#/alley">골목지도 타러 가기</a>
+  </section>
+
+  <nav class="tabs" aria-label="하단 탭">
+    <a href="#/" data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>홈</a>
+    <a href="#/alley" data-tab="alley"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>골목지도</a>
+    <a href="#/fav" data-tab="fav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg>즐겨찾기</a>
+  </nav>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- 홈 메뉴 (승강장) ----------
+  // href가 있는 메뉴만 운행 중. 나머지는 '준비 중' 화면으로 갑니다.
+  var PLATFORMS = [
+    { title: '매일 타는 열차', items: [
+      ['골목지도', 'ALLEY MAP', '#/alley'],
+      ['공지사항', 'NOTICE'],
+      ['학식 메뉴', 'CAFETERIA'],
+      ['셔틀버스', 'SHUTTLE'],
+      ['도서관', 'LIBRARY'],
+      ['캠퍼스 지도', 'MAP']
+    ] },
+    { title: '학사 노선', items: [
+      ['학사일정', 'CALENDAR'],
+      ['수강신청', 'REGISTRATION'],
+      ['성적 조회', 'GRADES'],
+      ['장학 안내', 'SCHOLARSHIP'],
+      ['등록금', 'TUITION'],
+      ['휴학 · 복학', 'LEAVE · RETURN']
+    ] },
+    { title: '캠퍼스 생활', items: [
+      ['기숙사', 'DORMITORY'],
+      ['취업 · 진로', 'CAREER'],
+      ['동아리', 'CLUBS'],
+      ['분실물 센터', 'LOST & FOUND'],
+      ['학생 상담', 'COUNSELING'],
+      ['교내 연락처', 'CONTACTS']
+    ] }
+  ];
+  var REGION_ORDER = ['대학가(학교 앞)', '교내', '대소원면 기타', '충주 시내', '충주 외곽'];
+
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'text') n.textContent = attrs[k];
+      else if (k === 'on') Object.keys(attrs.on).forEach(function (e) { n.addEventListener(e, attrs.on[e]); });
+      else n.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function (c) { if (c) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return n;
+  }
+  var ARROW = '<svg width="28" height="10" viewBox="0 0 28 10" fill="none" stroke="#5B6068" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M1 5h25M22 1l4 4-4 4"/></svg>';
+
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast.h); toast.h = setTimeout(function () { t.classList.remove('show'); }, 1800);
+  }
+
+  // ---------- 저장 (즐겨찾기, 마지막 필터) ----------
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem('knut.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem('knut.' + k, JSON.stringify(v)); } catch (e) {} }
+  };
+  var favs = store.get('favs', []);
+  function favKey(p) { return p.kind + '|' + p.name; }
+  function isFav(p) { return favs.indexOf(favKey(p)) >= 0; }
+  function toggleFav(p) {
+    var k = favKey(p), i = favs.indexOf(k);
+    if (i >= 0) favs.splice(i, 1); else favs.push(k);
+    store.set('favs', favs);
+    return i < 0;
+  }
+
+  // ---------- 승차권 ----------
+  function ticket(o) {
+    var a = el(o.href ? 'a' : 'button', o.href ? { class: 'ticket', href: o.href } : { class: 'ticket', type: 'button' });
+    if (o.onClick) a.addEventListener('click', o.onClick);
+    var main = el('span', { class: 'main' });
+    var route = el('span', { class: 'route' });
+    route.innerHTML = '<span></span>' + ARROW + '<span></span>';
+    route.firstChild.textContent = o.from || '교통대';
+    route.lastChild.textContent = o.to;
+    main.appendChild(route);
+    main.appendChild(el('span', { class: 'name', text: o.name }));
+    if (o.meta) main.appendChild(el('span', { class: 'meta', text: o.meta }));
+    a.appendChild(main);
+    a.appendChild(el('span', { class: 'stub' }, [el('small', { text: o.stubLabel }), el('b', { text: String(o.stubValue) })]));
+    return a;
+  }
+
+  // ---------- 홈 ----------
+  var page = 0;
+  function buildHome() {
+    var track = $('track'), dots = $('dots'), n = 0;
+    PLATFORMS.forEach(function (pf, i) {
+      var pg = el('nav', { class: 'page', 'aria-label': (i + 1) + '번 승강장 ' + pf.title });
+      pf.items.forEach(function (it) {
+        n += 1;
+        var no = String(n).padStart(2, '0');
+        pg.appendChild(ticket({
+          name: it[0], to: it[1], stubLabel: '호차', stubValue: no,
+          href: it[2] || ('#/soon/' + encodeURIComponent(it[0]) + '/' + encodeURIComponent(it[1]))
+        }));
+      });
+      track.appendChild(pg);
+      dots.appendChild(el('button', { type: 'button', 'aria-label': (i + 1) + '번 승강장', on: { click: function () { go(i); } } }, [el('i')]));
+    });
+    $('pf-prev').addEventListener('click', function () { go(page - 1); });
+    $('pf-next').addEventListener('click', function () { go(page + 1); });
+    var raf;
+    track.addEventListener('scroll', function () {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function () { setPage(Math.round(track.scrollLeft / track.clientWidth)); });
+    });
+    setPage(0);
+  }
+  function go(i) {
+    i = Math.max(0, Math.min(PLATFORMS.length - 1, i));
+    $('track').scrollTo({ left: i * $('track').clientWidth, behavior: 'smooth' });
+    setPage(i);
+  }
+  function setPage(i) {
+    page = i;
+    $('pf-no').textContent = (i + 1) + '번 승강장';
+    $('pf-name').textContent = PLATFORMS[i].title;
+    $('pf-prev').style.opacity = i === 0 ? .35 : 1;
+    $('pf-next').style.opacity = i === PLATFORMS.length - 1 ? .35 : 1;
+    Array.prototype.forEach.call($('dots').children, function (b, j) { b.setAttribute('aria-current', j === i ? 'true' : 'false'); });
+  }
+
+  // ---------- 골목지도 ----------
+  var DATA = null;
+  var st = store.get('filter', { kind: '맛집', region: '', tags: [], q: '' });
+  if (!st.tags) st.tags = [];
+
+  function places() { return DATA ? DATA[st.kind] : []; }
+  function matches(p) {
+    if (st.region && p.region !== st.region) return false;
+    for (var i = 0; i < st.tags.length; i++) if (p.tags.indexOf(st.tags[i]) < 0) return false;
+    if (st.q && p.name.replace(/\s/g, '').toLowerCase().indexOf(st.q.replace(/\s/g, '').toLowerCase()) < 0) return false;
+    return true;
+  }
+  function placeTicket(p) {
+    return ticket({
+      from: p.region || '위치 확인 필요', to: p.kind === '맛집' ? 'FOOD' : 'SPOT',
+      name: p.name, meta: p.tags.length ? p.tags.join(' · ') : '태그 없음',
+      stubLabel: '추천', stubValue: p.recs,
+      href: '#/place/' + encodeURIComponent(p.kind) + '/' + encodeURIComponent(p.name)
+    });
+  }
+
+  function renderAlley() {
+    if (!DATA) return;
+    // 분류
+    var kind = $('kind'); kind.innerHTML = '';
+    ['맛집', '숨은장소'].forEach(function (k) {
+      kind.appendChild(el('button', { type: 'button', 'aria-pressed': String(st.kind === k), text: k + ' ' + DATA[k].length,
+        on: { click: function () { st = { kind: k, region: '', tags: [], q: '' }; $('q').value = ''; save(); renderAlley(); } } }));
+    });
+
+    var all = places();
+    // 지역 칩
+    var regions = $('regions'); regions.innerHTML = '';
+    var rc = {}; all.forEach(function (p) { if (p.region) rc[p.region] = (rc[p.region] || 0) + 1; });
+    [''].concat(REGION_ORDER.filter(function (r) { return rc[r]; })).forEach(function (r) {
+      var b = el('button', { class: 'chip region', type: 'button', 'aria-pressed': String(st.region === r),
+        on: { click: function () { st.region = st.region === r ? '' : r; save(); renderAlley(); } } }, [r || '전체 지역']);
+      if (r) b.appendChild(el('small', { text: String(rc[r]) }));
+      regions.appendChild(b);
+    });
+
+    // 태그 칩 (현재 지역·검색 기준 개수)
+    var base = all.filter(function (p) {
+      if (st.region && p.region !== st.region) return false;
+      if (st.q && p.name.replace(/\s/g, '').toLowerCase().indexOf(st.q.replace(/\s/g, '').toLowerCase()) < 0) return false;
+      return true;
+    });
+    var tc = {};
+    base.forEach(function (p) { p.tags.forEach(function (t) { tc[t] = (tc[t] || 0) + 1; }); });
+    st.tags.forEach(function (t) { if (!tc[t]) tc[t] = 0; });
+    var tags = $('tags'); tags.innerHTML = '';
+    Object.keys(tc).sort(function (a, b) {
+      var sa = st.tags.indexOf(a) >= 0, sb = st.tags.indexOf(b) >= 0;
+      if (sa !== sb) return sa ? -1 : 1;
+      return tc[b] - tc[a];
+    }).forEach(function (t) {
+      var on = st.tags.indexOf(t) >= 0;
+      tags.appendChild(el('button', { class: 'chip', type: 'button', 'aria-pressed': String(on),
+        on: { click: function () {
+          if (on) st.tags = st.tags.filter(function (x) { return x !== t; }); else st.tags = st.tags.concat([t]);
+          save(); renderAlley();
+        } } }, [t, el('small', { text: String(tc[t]) })]));
+    });
+    tags.scrollLeft = 0; // 선택한 태그가 맨 앞으로 오므로 처음으로 되돌림
+
+    // 목록
+    var hit = all.filter(matches);
+    var list = $('list'); list.innerHTML = '';
+    hit.forEach(function (p) { list.appendChild(placeTicket(p)); });
+    if (!hit.length) list.appendChild(el('div', { class: 'empty', text: '조건에 맞는 곳이 없어요. 태그나 지역을 하나 빼보세요.' }));
+
+    var parts = [];
+    if (st.region) parts.push(st.region);
+    if (st.tags.length) parts.push(st.tags.join(' + '));
+    if (st.q) parts.push('"' + st.q + '"');
+    $('sum').textContent = parts.length ? parts.join(' · ') + ' · ' + hit.length + '곳' : '전체 ' + hit.length + '곳 · 추천 많은 순';
+    $('clear').hidden = !parts.length;
+  }
+  function save() { store.set('filter', st); }
+
+  // ---------- 상세 ----------
+  var current = null;
+  function lineBlock(arr, emptyText) {
+    var dd = el('dd');
+    if (!arr.length) { dd.appendChild(el('span', { class: 'none', text: emptyText })); return dd; }
+    dd.appendChild(el('div', { class: 'lead', text: arr[0] }));
+    if (arr.length > 1) {
+      var d = el('details'), ul = el('ul');
+      d.appendChild(el('summary', { text: '학생 메모 ' + (arr.length - 1) + '개 더 보기' }));
+      arr.slice(1).forEach(function (x) { ul.appendChild(el('li', { text: x })); });
+      d.appendChild(ul); dd.appendChild(d);
+    }
+    return dd;
+  }
+  function renderPlace(kind, name) {
+    var p = DATA && (DATA[kind] || []).filter(function (x) { return x.name === name; })[0];
+    var box = $('pass'); box.innerHTML = '';
+    if (!p) { box.appendChild(el('div', { class: 'empty', text: '장소를 찾을 수 없어요.' })); return; }
+    current = p;
+    var pass = el('article', { class: 'pass' });
+    pass.appendChild(el('header', null, [el('small', { text: (p.region || '위치 확인 필요') + ' · ' + p.kind }), el('h1', { text: p.name })]));
+    var dl = el('dl');
+    dl.appendChild(el('dt', { text: '영업시간' })); dl.appendChild(lineBlock(p.hours, '정보 없음'));
+    if (p.kind === '맛집') { dl.appendChild(el('dt', { text: '가격' })); dl.appendChild(lineBlock(p.price, '정보 없음')); }
+    dl.appendChild(el('dt', { text: '위치' })); dl.appendChild(el('dd', null, [p.address ? el('span', { text: p.address }) : el('span', { class: 'none', text: '정보 없음' })]));
+    pass.appendChild(dl);
+    if (p.tags.length) {
+      var tr = el('div', { class: 'tagrow' });
+      p.tags.forEach(function (t) { tr.appendChild(el('span', { text: t })); });
+      pass.appendChild(tr);
+    }
+    pass.appendChild(el('div', { class: 'cut', 'aria-hidden': 'true' }));
+    pass.appendChild(el('div', { class: 'stats' }, [
+      el('div', null, [el('small', { text: '추천한 학생' }), el('b', { text: p.recs + '명' })]),
+      el('div', null, [el('small', { text: '확인한 날' }), el('span', { class: 'date', text: p.checked || '—' })])
+    ]));
+    box.appendChild(pass);
+
+    var ml = $('maplink');
+    if (p.map) { ml.href = p.map; ml.removeAttribute('aria-disabled'); }
+    else { ml.removeAttribute('href'); ml.setAttribute('aria-disabled', 'true'); }
+    $('searchlink').href = 'https://map.naver.com/p/search/' + encodeURIComponent(p.address && p.address.indexOf('충주') >= 0 ? p.name : '충주 ' + p.name);
+    paintFav();
+  }
+  function paintFav() {
+    var on = current && isFav(current);
+    $('fav').setAttribute('aria-pressed', String(!!on));
+    $('fav').classList.toggle('fav-on', !!on);
+  }
+
+  // ---------- 즐겨찾기 ----------
+  function renderFav() {
+    var list = $('favlist'); list.innerHTML = '';
+    if (!DATA) return;
+    var items = favs.map(function (k) {
+      var i = k.indexOf('|'), kind = k.slice(0, i), name = k.slice(i + 1);
+      return (DATA[kind] || []).filter(function (p) { return p.name === name; })[0];
+    }).filter(Boolean);
+    items.forEach(function (p) { list.appendChild(placeTicket(p)); });
+    if (!items.length) list.appendChild(el('div', { class: 'empty', text: '아직 즐겨찾기한 곳이 없어요. 장소 상세 화면의 별을 눌러 담아보세요.' }));
+  }
+
+  // ---------- 화면 전환 ----------
+  var lastList = '#/alley';
+  function show(id, tab) {
+    ['s-home', 's-alley', 's-place', 's-fav', 's-soon'].forEach(function (s) { $(s).hidden = s !== id; });
+    document.querySelectorAll('.tabs a').forEach(function (a) {
+      if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    window.scrollTo(0, 0);
+  }
+  function route() {
+    var h = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+    if (h[0] === 'alley') { lastList = '#/alley'; show('s-alley', 'alley'); renderAlley(); }
+    else if (h[0] === 'fav') { lastList = '#/fav'; show('s-fav', 'fav'); renderFav(); }
+    else if (h[0] === 'place') { show('s-place', lastList === '#/fav' ? 'fav' : 'alley'); renderPlace(h[1], h.slice(2).join('/')); }
+    else if (h[0] === 'soon') { $('soon-title').textContent = h[1] || ''; $('soon-en').textContent = 'KNUT → ' + (h[2] || ''); show('s-soon', 'home'); }
+    else { show('s-home', 'home'); }
+  }
+
+  $('back').addEventListener('click', function () { location.hash = lastList; });
+  $('fav').addEventListener('click', function () {
+    if (!current) return;
+    toast(toggleFav(current) ? '즐겨찾기에 담았어요' : '즐겨찾기에서 뺐어요');
+    paintFav();
+  });
+  $('clear').addEventListener('click', function () { st.region = ''; st.tags = []; st.q = ''; $('q').value = ''; save(); renderAlley(); });
+  $('q').value = st.q || '';
+  $('q').addEventListener('input', function (e) { st.q = e.target.value.trim(); save(); renderAlley(); });
+  window.addEventListener('hashchange', route);
+
+  buildHome();
+  route();
+  $('list').appendChild(el('div', { class: 'loading', text: '승차권을 발권하는 중…' }));
+  fetch('data.json', { cache: 'no-cache' })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (d) { DATA = d; route(); })
+    .catch(function () {
+      $('list').innerHTML = '';
+      $('list').appendChild(el('div', { class: 'empty', text: 'data.json을 불러오지 못했어요. GitHub Pages나 로컬 서버에서 열어주세요.' }));
+    });
+})();
+</script>
+</body>
+</html>
