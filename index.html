@@ -46,6 +46,12 @@ h1 .dot{color:var(--apple)}
 .lede{color:var(--muted);max-width:60ch;margin:0}
 .stats{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-size:13px;color:var(--muted)}
 .stats b{font-family:var(--f-mono);font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.applink{display:flex;align-items:center;gap:12px;margin-top:16px;max-width:420px;min-height:52px;padding:10px 16px;border-radius:12px;background:#1E4FA3;color:#fff;text-decoration:none}
+.applink:hover{background:#173f85}
+.applink-ic{flex:none;width:36px;height:36px;border-radius:10px;background:#FBF8F1;color:#1E4FA3;display:flex;align-items:center;justify-content:center}
+.applink-tx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.35}
+.applink-tx b{font-size:15px}
+.applink-tx small{font-size:12px;color:#D7E2F3}
 
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-block:12px}
 .tabs{display:flex;gap:4px;border:1px solid var(--line);border-radius:999px;padding:3px;width:max-content;background:var(--surface)}
@@ -105,6 +111,11 @@ footer p{margin:.3em 0;max-width:70ch}
     <h1>충주캠퍼스 골목지도<span class="dot">.</span></h1>
     <p class="lede">재학생 21명이 직접 다녀오고 적어 낸 학교 앞 맛집과 숨은 장소를 한곳에 모았습니다. 여러 명이 같은 곳을 냈다면 추천 수로 보여 줍니다.</p>
     <div class="stats" id="stats"></div>
+    <a class="applink" href="app.html">
+      <span class="applink-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M15 6v12" stroke-dasharray="2 2"/><path d="M6 12h5M9 10l2 2-2 2"/></svg></span>
+      <span class="applink-tx"><b>레일패스 앱으로 보기</b><small>운행 중 표시 · 랜덤 발권 · 즐겨찾기</small></span>
+      <span aria-hidden="true">→</span>
+    </a>
   </header>
 </div>
 
