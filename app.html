@@ -26,6 +26,7 @@
     --mono: 'IBM Plex Mono', ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; height: 100%; }
   body {
     background: var(--ground);
@@ -171,6 +172,11 @@
   .badge.soon { background: #FDEFC4; color: #6B4A00; }
   .badge.break { background: #FDEFC4; color: #6B4A00; }
   .badge.closed { background: #ECE7DC; color: #5B6068; }
+  #amap { height: max(360px, calc(100vh - 470px)); border-radius: 14px; overflow: hidden; background: #DCE3EC; }
+  .dmap { height: 200px; margin: 0 18px 12px; border-radius: 10px; overflow: hidden; background: #DCE3EC; cursor: pointer; }
+  .pin { width: 26px; height: 34px; position: relative; }
+  .pin i { position: absolute; left: 1px; top: 0; width: 24px; height: 24px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid #fff; box-shadow: 0 2px 6px #00000055; box-sizing: border-box; }
+  .gate { padding: 4px 10px; border-radius: 12px; background: var(--ink); color: #fff; font: 700 12px 'Noto Sans KR', sans-serif; white-space: nowrap; box-shadow: 0 2px 6px #00000055; }
   .tels { display: flex; flex-direction: column; padding: 8px 10px 12px; }
   .tel { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 8px; border-radius: 8px; }
   .tel:hover { background: #F1ECE0; }
@@ -219,6 +225,10 @@
       <div class="subtitle"><span class="eyebrow" style="font-size:11px">KNUT → ALLEY MAP</span><h1>충주캠퍼스 골목지도</h1></div>
     </div>
     <div class="seg" id="kind" role="group" aria-label="분류"></div>
+    <div class="seg" id="viewseg" role="group" aria-label="보기 방식" hidden>
+      <button type="button" data-v="list" aria-pressed="true">목록으로</button>
+      <button type="button" data-v="map" aria-pressed="false">지도로</button>
+    </div>
     <label class="search">
       <svg viewBox="0 0 24 24" fill="none" stroke="#5B6068" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
       <span style="position:absolute;width:1px;height:1px;overflow:hidden">이름으로 찾기</span>
@@ -228,6 +238,11 @@
     <div class="chips" id="tags" role="group" aria-label="태그로 거르기"></div>
     <div class="summary"><span id="sum"></span><span style="display:flex;gap:6px"><button id="clear" hidden>필터 초기화</button><button id="lucky">랜덤 발권</button></span></div>
     <div class="list" id="list"></div>
+    <div id="mapwrap" hidden>
+      <div id="amap" role="region" aria-label="골목지도 지도"></div>
+      <p class="note" id="mapnote" style="text-align:left;margin:8px 0 0"></p>
+      <div id="mapsheet" class="list" style="margin-top:10px"></div>
+    </div>
   </section>
 
   <!-- 상세 -->
@@ -370,6 +385,34 @@
       ['교내 연락처', 'CONTACTS', '#/task/phone']
     ] }
   ];
+  // ---------- 네이버 지도 ----------
+  // 네이버 클라우드 Maps의 Client ID를 넣으면 지도가 켜집니다. 비워 두면 지도 없이 목록으로만 동작해요.
+  // 콘솔의 Web 서비스 URL에 https://jmsin04-commits.github.io 를 등록해야 열립니다. (Client Secret은 넣지 마세요)
+  var NAVER_MAP_KEY = '';
+  var GATE = { lat: 36.9697, lng: 127.8722, name: '교통대 정문' }; // 지도 처음 중심 (대략)
+  var mapBroken = false, naverP = null;
+  function mapOK() { return !!NAVER_MAP_KEY && !mapBroken; }
+  function loadNaver() {
+    if (!mapOK()) return Promise.reject(new Error('no key'));
+    if (naverP) return naverP;
+    naverP = new Promise(function (res, rej) {
+      window.navermap_authFailure = function () { mapBroken = true; rej(new Error('auth')); hideMaps(); };
+      var s = document.createElement('script');
+      s.src = 'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=' + encodeURIComponent(NAVER_MAP_KEY);
+      s.onload = function () { (window.naver && window.naver.maps) ? res(window.naver.maps) : rej(new Error('load')); };
+      s.onerror = function () { mapBroken = true; rej(new Error('load')); hideMaps(); };
+      document.head.appendChild(s);
+    });
+    return naverP;
+  }
+  function hideMaps() {
+    $('viewseg').hidden = true; $('mapwrap').hidden = true; $('list').hidden = false;
+    var d = document.getElementById('dmap'); if (d) d.remove();
+    st.view = 'list';
+  }
+  var PIN = { open: '#1F9D57', soon: '#E0A100', break: '#E0A100', closed: '#8A8F96', none: '#1E4FA3' };
+  function pinHtml(color) { return '<div class="pin"><i style="background:' + color + '"></i></div>'; }
+
   // ---------- 행정 길찾기 ----------
   // 출처: 국립한국교통대학교 홈페이지 각 안내 페이지 (2026-11-10 확인). 바뀔 수 있으니 공식 안내를 함께 연결합니다.
   var ADMIN_CHECKED = '2026-11-10';
@@ -640,7 +683,7 @@
     var kind = $('kind'); kind.innerHTML = '';
     ['맛집', '숨은장소'].forEach(function (k) {
       kind.appendChild(el('button', { type: 'button', 'aria-pressed': String(st.kind === k), text: k + ' ' + DATA[k].length,
-        on: { click: function () { st = { kind: k, region: '', tags: [], q: '' }; $('q').value = ''; save(); renderAlley(); } } }));
+        on: { click: function () { st = { kind: k, region: '', tags: [], q: '', view: st.view }; $('q').value = ''; save(); renderAlley(); } } }));
     });
 
     var all = places();
@@ -698,8 +741,42 @@
     if (st.q) parts.push('"' + st.q + '"');
     $('sum').textContent = parts.length ? parts.join(' · ') + ' · ' + hit.length + '곳' : '전체 ' + hit.length + '곳 · 추천 많은 순';
     $('clear').hidden = !parts.length;
+
+    // 목록 / 지도 전환 (지도 키가 있고, 좌표가 있는 곳이 있을 때만)
+    var canMap = mapOK() && all.some(function (p) { return p.lat; });
+    $('viewseg').hidden = !canMap;
+    var asMap = canMap && st.view === 'map';
+    Array.prototype.forEach.call($('viewseg').children, function (b) { b.setAttribute('aria-pressed', String((b.dataset.v === 'map') === asMap)); });
+    $('list').hidden = asMap; $('mapwrap').hidden = !asMap;
+    if (asMap) drawMap(hit);
+  }
+
+  var amap = null, amarkers = [];
+  function drawMap(hit) {
+    var pts = hit.filter(function (p) { return p.lat && p.lng; });
+    var miss = hit.length - pts.length;
+    $('mapnote').textContent = '지도에 ' + pts.length + '곳' + (miss ? ' · 좌표가 없는 ' + miss + '곳은 목록에서 볼 수 있어요' : '') + ' · 핀 색: 초록 운행 중, 노랑 곧 종료·브레이크, 회색 운행 종료, 파랑 영업시간 정보 없음';
+    var sheet = $('mapsheet'); sheet.innerHTML = '';
+    sheet.appendChild(el('div', { class: 'empty', style: 'padding:16px', text: '핀을 누르면 승차권이 나와요' }));
+    loadNaver().then(function (M) {
+      if (!amap) {
+        amap = new M.Map('amap', { center: new M.LatLng(GATE.lat, GATE.lng), zoom: 15, zoomControl: true, zoomControlOptions: { position: M.Position ? M.Position.TOP_RIGHT : undefined } });
+        new M.Marker({ position: new M.LatLng(GATE.lat, GATE.lng), map: amap, icon: { content: '<div class="gate">' + GATE.name + '역</div>', anchor: new M.Point(40, 12) } });
+      } else if (amap.autoResize) { amap.autoResize(); }
+      amarkers.forEach(function (m) { m.setMap(null); }); amarkers = [];
+      pts.forEach(function (p) {
+        var o = openState(p), color = PIN[o ? o.s : 'none'];
+        var mk = new M.Marker({ position: new M.LatLng(p.lat, p.lng), map: amap, title: p.name,
+          icon: { content: pinHtml(color), anchor: new M.Point(13, 34) } });
+        M.Event.addListener(mk, 'click', function () { sheet.innerHTML = ''; sheet.appendChild(placeTicket(p)); });
+        amarkers.push(mk);
+      });
+    }).catch(function () { hideMaps(); renderAlley(); });
   }
   function save() { store.set('filter', st); }
+  Array.prototype.forEach.call($('viewseg').children, function (b) {
+    b.addEventListener('click', function () { st.view = b.dataset.v; save(); renderAlley(); });
+  });
   var lastHit = [];
   $('lucky').addEventListener('click', function () {
     if (!lastHit.length) return;
@@ -750,6 +827,17 @@
       var tr = el('div', { class: 'tagrow' });
       p.tags.forEach(function (t) { tr.appendChild(el('span', { text: t })); });
       pass.appendChild(tr);
+    }
+    if (mapOK() && p.lat && p.lng) {
+      var dm = el('div', { class: 'dmap', id: 'dmap', role: 'img', 'aria-label': p.name + ' 위치 지도 (누르면 네이버 지도로 열기)' });
+      pass.appendChild(dm);
+      loadNaver().then(function (M) {
+        if (!document.body.contains(dm)) return;
+        var pos = new M.LatLng(p.lat, p.lng);
+        var m = new M.Map(dm, { center: pos, zoom: 17, draggable: false, scrollWheel: false, pinchZoom: true, zoomControl: true });
+        new M.Marker({ position: pos, map: m, icon: { content: pinHtml(PIN[(openState(p) || { s: 'none' }).s]), anchor: new M.Point(13, 34) } });
+        M.Event.addListener(m, 'click', function () { window.open(p.map || $('searchlink').href, '_blank', 'noopener'); });
+      }).catch(function () { dm.remove(); });
     }
     pass.appendChild(el('div', { class: 'cut', 'aria-hidden': 'true' }));
     pass.appendChild(el('div', { class: 'stats' }, [

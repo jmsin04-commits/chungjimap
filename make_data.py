@@ -28,6 +28,15 @@ def first_link(v):
     return m.group(0) if m else ""
 
 
+def num(v):
+    """위도·경도 칸: 숫자면 소수 6자리까지, 아니면 None"""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return round(f, 6) if f else None
+
+
 def lines(v):
     v = clean(v)
     if v in UNKNOWN:
@@ -53,7 +62,10 @@ def load_sheet(ws, kind):
         tags = [t for t in tags if t and t not in UNKNOWN]
         region = clean(get(r, "지역"))
         address = clean(get(r, "위치"))
+        lat, lng = num(get(r, "위도")), num(get(r, "경도"))
+        extra = {"lat": lat, "lng": lng} if lat and lng else {}
         places.append({
+            **extra,
             "kind": kind,
             "name": name,
             "address": "" if address in UNKNOWN else address,
@@ -75,6 +87,8 @@ def main():
             "숨은장소": load_sheet(wb["숨은장소"], "숨은장소")}
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"data.json: 맛집 {len(data['맛집'])}곳, 숨은장소 {len(data['숨은장소'])}곳")
+    for k, v in data.items():
+        print(f"  {k} 좌표 있음: {sum(1 for p in v if 'lat' in p)}곳")
 
 
 if __name__ == "__main__":
