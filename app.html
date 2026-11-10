@@ -171,6 +171,12 @@
   .badge.soon { background: #FDEFC4; color: #6B4A00; }
   .badge.break { background: #FDEFC4; color: #6B4A00; }
   .badge.closed { background: #ECE7DC; color: #5B6068; }
+  .tels { display: flex; flex-direction: column; padding: 8px 10px 12px; }
+  .tel { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 8px; border-radius: 8px; }
+  .tel:hover { background: #F1ECE0; }
+  .tel small { font-size: 13px; color: var(--muted); }
+  .tel b { font-family: var(--mono); font-size: 17px; color: var(--ground); }
+  #tasklinks { grid-template-columns: 1fr; }
   .help { padding: 4px 18px 18px; font-size: 14px; line-height: 1.65; color: #2E333A; }
   .help h2 { margin: 18px 0 6px; font-size: 16px; font-weight: 900; color: var(--ground); }
   .help p { margin: 0 0 8px; }
@@ -249,6 +255,25 @@
     <div class="list" id="favlist"></div>
   </section>
 
+  <!-- 행정 길찾기 -->
+  <section class="screen" id="s-admin" aria-label="행정 길찾기" hidden>
+    <div class="bar" style="justify-content:flex-start">
+      <a class="round" href="#/" aria-label="홈으로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <div class="subtitle"><span class="eyebrow" style="font-size:11px">KNUT → ADMIN GUIDE</span><h1>행정 길찾기</h1></div>
+    </div>
+    <p class="note" style="text-align:left;margin:0">할 일을 고르면 언제, 어떻게, 어디에 물어보면 되는지 알려줘요.</p>
+    <div class="list" id="adminlist"></div>
+  </section>
+  <section class="screen" id="s-task" aria-label="행정 안내" hidden>
+    <div class="bar" style="justify-content:flex-start">
+      <a class="round" href="#/admin" aria-label="행정 길찾기로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a>
+      <span class="eyebrow" style="font-size:11px">ADMIN PASS</span>
+    </div>
+    <div id="taskpass"></div>
+    <div id="tasklinks" class="actions"></div>
+    <p class="note" id="tasknote"></p>
+  </section>
+
   <!-- 이용 안내 -->
   <section class="screen" id="s-help" aria-label="이용 안내" hidden>
     <div class="bar" style="justify-content:flex-start">
@@ -257,7 +282,9 @@
     </div>
     <article class="pass help">
       <h2>홈</h2>
-      <p>메뉴 승차권 18장이 승강장 3개에 나뉘어 있어요. 좌우로 밀거나 ‹ › 버튼, 아래 점으로 넘겨요. 지금은 <b>골목지도</b>만 운행하고, 나머지는 준비 중이에요.</p>
+      <p>메뉴 승차권 18장이 승강장 3개에 나뉘어 있어요. 좌우로 밀거나 ‹ › 버튼, 아래 점으로 넘겨요. 지금은 <b>골목지도</b>와 2번 승강장 <b>행정 길찾기</b>가 운행하고, 나머지는 준비 중이에요.</p>
+      <h2>행정 길찾기</h2>
+      <p>증명서 발급, 수강신청, 휴학·복학, 등록금 분납, 장학금, 학생증, 대표 전화를 언제·어떻게·어디에 물어볼지 정리했어요. 전화번호를 누르면 바로 걸리고, 학교 공식 안내로 이어져요.</p>
       <h2>골목지도</h2>
       <ol>
         <li><b>맛집 / 숨은장소</b>로 목록을 바꿔요.</li>
@@ -299,7 +326,7 @@
     </div>
     <div class="soon">
       <b>아직 운행 준비 중인 노선이에요</b>
-      <p>이 메뉴는 정보 연결을 준비하고 있어요. 지금은 골목지도 노선만 운행 중입니다.</p>
+      <p>이 메뉴는 정보 연결을 준비하고 있어요. 지금은 골목지도와 행정 길찾기 노선이 운행 중입니다.</p>
     </div>
     <a class="btn solid" href="#/alley">골목지도 타러 가기</a>
   </section>
@@ -328,12 +355,12 @@
       ['캠퍼스 지도', 'MAP']
     ] },
     { title: '학사 노선', items: [
-      ['학사일정', 'CALENDAR'],
-      ['수강신청', 'REGISTRATION'],
-      ['성적 조회', 'GRADES'],
-      ['장학 안내', 'SCHOLARSHIP'],
-      ['등록금', 'TUITION'],
-      ['휴학 · 복학', 'LEAVE · RETURN']
+      ['행정 길찾기', 'ADMIN GUIDE', '#/admin'],
+      ['수강신청 · 정정', 'REGISTRATION', '#/task/course'],
+      ['증명서 발급', 'CERTIFICATE', '#/task/cert'],
+      ['장학금 · 학자금대출', 'SCHOLARSHIP', '#/task/scholar'],
+      ['등록금 분할납부', 'TUITION', '#/task/tuition'],
+      ['휴학 · 복학', 'LEAVE · RETURN', '#/task/leave']
     ] },
     { title: '캠퍼스 생활', items: [
       ['기숙사', 'DORMITORY'],
@@ -341,10 +368,82 @@
       ['동아리', 'CLUBS'],
       ['분실물 센터', 'LOST & FOUND'],
       ['학생 상담', 'COUNSELING'],
-      ['교내 연락처', 'CONTACTS']
+      ['교내 연락처', 'CONTACTS', '#/task/phone']
     ] }
   ];
-  var REGION_ORDER = ['대학가(학교 앞)', '교내', '대소원면 기타', '충주 시내', '충주 외곽'];
+  // ---------- 행정 길찾기 ----------
+  // 출처: 국립한국교통대학교 홈페이지 각 안내 페이지 (2026-11-10 확인). 바뀔 수 있으니 공식 안내를 함께 연결합니다.
+  var ADMIN_CHECKED = '2026-11-10';
+  var ADMIN = [
+    { id: 'cert', name: '증명서 발급', en: 'CERTIFICATE', desk: '학사관리과',
+      rows: [
+        ['인터넷', '인터넷 증명발급(ut1.certpia.com)에서 바로 출력. 출력본은 무료, 전자증명서(PDF)는 별도 수수료'],
+        ['무인발급기', '충주캠퍼스 종합강의관 1층 자동증명발급기 (수수료 무료)'],
+        ['그 밖에', '가까운 주민센터·시군구청에서 팩스민원으로도 신청 가능']
+      ],
+      links: [['인터넷 증명발급', 'https://ut1.certpia.com']],
+      tel: [['학사관리과', '043-841-5671']],
+      src: 'https://www.ut.ac.kr/kor/sub05_08_01_04_06.do' },
+    { id: 'course', name: '수강신청 · 정정 · 철회', en: 'REGISTRATION', desk: '학사관리과',
+      rows: [
+        ['순서', '지도교수 수강지도 → 예비수강신청 → 수강신청 → 수강정정 → 학과 수강조정'],
+        ['1학기', '예비 1월 말 · 신청 2월 초 · 정정 2월 중 · 학과 조정 2월 말'],
+        ['2학기', '예비 7월 말 · 신청 8월 초 · 정정 8월 중 · 학과 조정 8월 말'],
+        ['학점', '기본 19학점. 직전 학기 평점 4.0 이상 23학점, 학사경고자 12~15학점'],
+        ['확인', '수강 내역 최종 확인은 개강 후 1주일 이내']
+      ],
+      links: [['수강 철회 안내', 'https://www.ut.ac.kr/kor/sub05_08_01_01_03.do']],
+      tel: [['학사관리과', '043-841-5014']],
+      src: 'https://www.ut.ac.kr/kor/sub05_08_01_01_02.do' },
+    { id: 'leave', name: '휴학 · 복학', en: 'LEAVE · RETURN', desk: '학사관리과',
+      rows: [
+        ['휴학 기간', '일반휴학은 수업일수 1/4 이내. 질병·육아·창업휴학은 사유 발생 시, 병역휴학은 입대 시'],
+        ['휴학 서류', '일반휴학은 없음. 질병은 4주 이상 진단서, 병역은 입영통지서 등 종류별 증빙'],
+        ['복학 기간', '1월·7월 첫째 주 (학기 시작 후 수업일수 1/4 이내까지)'],
+        ['복학 신청', '통합정보시스템(m_tis.ut.ac.kr) → 학적 → 복학 신청'],
+        ['주의', '복학하지 않으면 마감 10일 전 제적예고 안내문이 등기로 와요']
+      ],
+      links: [['휴학 안내', 'https://www.ut.ac.kr/kor/sub05_08_01_04_02.do']],
+      tel: [['학사관리과', '043-841-5612']],
+      src: 'https://www.ut.ac.kr/kor/sub05_08_01_04_03.do' },
+    { id: 'tuition', name: '등록금 분할납부', en: 'TUITION', desk: '대표번호 문의',
+      rows: [
+        ['신청 시기', '1학기 2월·3월, 2학기 8월·9월 (세부 일정은 학기 전 공지)'],
+        ['신청 방법', '통합정보시스템 → 등록 → 분납신청 → 2·3·4회 중 선택'],
+        ['납부', '고지서 출력 후 가상계좌 또는 은행 방문. 카드 납부는 안 돼요'],
+        ['주의', '1차 기간에 안 내면 분납이 자동 취소되고, 분납 중 휴학하면 남은 금액을 한 번에 내야 해요']
+      ],
+      links: [],
+      tel: [['충주캠퍼스 대표', '043-841-5114']],
+      src: 'https://www.ut.ac.kr/kor/sub05_08_01_08_02.do' },
+    { id: 'scholar', name: '장학금 · 학자금대출', en: 'SCHOLARSHIP', desk: '한국장학재단 · 학생처',
+      rows: [
+        ['국가장학금', '한국장학재단에서 신청. 가구원 동의와 서류 제출까지 마쳐야 해요'],
+        ['학자금대출', '한국장학재단에서 신청'],
+        ['교내 장학', '장학마다 선발 시기와 성적 기준이 달라요. 학기마다 장학 공지를 확인하세요']
+      ],
+      links: [['한국장학재단', 'https://www.kosaf.go.kr'], ['재학생 장학제도', 'https://www.ut.ac.kr/kor/sub06_05_02.do']],
+      tel: [['충주캠퍼스 대표', '043-841-5114']],
+      src: 'https://www.ut.ac.kr/kor/sub06_05_04.do' },
+    { id: 'idcard', name: '모바일 학생증', en: 'STUDENT ID', desk: '스마트모바일 앱',
+      rows: [
+        ['발급', '한국교통대학교 스마트모바일 앱 로그인 → 스마트신분증 메뉴'],
+        ['쓰는 곳', '도서관 출입게이트, 인포메이션센터, 무인 도서대출·반납기'],
+        ['실물 학생증', '신분증, 도서관 이용, 대중교통·문화시설 할인에 쓰여요. 발급 절차는 대표번호로 문의']
+      ],
+      links: [['학생증 안내', 'https://www.ut.ac.kr/kor/sub05_08_02.do']],
+      tel: [['충주캠퍼스 대표', '043-841-5114']],
+      src: 'https://www.ut.ac.kr/kor/sub06_03_02.do' },
+    { id: 'phone', name: '캠퍼스 대표 전화', en: 'CONTACTS', desk: '대표번호',
+      rows: [
+        ['어디로?', '담당 부서를 모르면 대표번호로 걸어 연결을 요청하세요']
+      ],
+      links: [],
+      tel: [['충주캠퍼스', '043-841-5114'], ['증평캠퍼스', '043-820-5114'], ['의왕캠퍼스', '031-460-0500']],
+      src: 'https://www.ut.ac.kr/kor/sub05_08_02.do' }
+  ];
+
+  var REGION_ORDER =['대학가(학교 앞)', '교내', '대소원면 기타', '충주 시내', '충주 외곽'];
 
   var $ = function (id) { return document.getElementById(id); };
   function el(tag, attrs, kids) {
@@ -659,10 +758,41 @@
     if (!items.length) list.appendChild(el('div', { class: 'empty', text: '아직 즐겨찾기한 곳이 없어요. 장소 상세 화면의 별을 눌러 담아보세요.' }));
   }
 
+  // ---------- 행정 화면 ----------
+  function renderAdmin() {
+    var list = $('adminlist'); list.innerHTML = '';
+    ADMIN.forEach(function (t, i) {
+      list.appendChild(ticket({ from: '교통대', to: t.en, name: t.name, meta: t.desk,
+        stubLabel: '창구', stubValue: String(i + 1).padStart(2, '0'), href: '#/task/' + t.id }));
+    });
+  }
+  function renderTask(id) {
+    var t = ADMIN.filter(function (x) { return x.id === id; })[0];
+    var box = $('taskpass'); box.innerHTML = ''; $('tasklinks').innerHTML = '';
+    if (!t) { box.appendChild(el('div', { class: 'empty', text: '안내를 찾을 수 없어요.' })); return; }
+    var pass = el('article', { class: 'pass' });
+    pass.appendChild(el('header', null, [el('small', { text: '담당 · ' + t.desk }), el('h1', { text: t.name })]));
+    var dl = el('dl', { style: 'grid-template-columns:72px 1fr' });
+    t.rows.forEach(function (r) { dl.appendChild(el('dt', { text: r[0] })); dl.appendChild(el('dd', { text: r[1] })); });
+    pass.appendChild(dl);
+    pass.appendChild(el('div', { class: 'cut', 'aria-hidden': 'true' }));
+    var tels = el('div', { class: 'tels' });
+    t.tel.forEach(function (p) {
+      tels.appendChild(el('a', { class: 'tel', href: 'tel:' + p[1].replace(/-/g, '') }, [el('small', { text: p[0] }), el('b', { text: p[1] })]));
+    });
+    pass.appendChild(tels);
+    box.appendChild(pass);
+    var links = t.links.concat([['학교 공식 안내', t.src]]);
+    links.forEach(function (l, i) {
+      $('tasklinks').appendChild(el('a', { class: 'btn' + (i === links.length - 1 ? ' solid' : ''), href: l[1], target: '_blank', rel: 'noopener', text: l[0] }));
+    });
+    $('tasknote').textContent = '학교 홈페이지 안내를 ' + ADMIN_CHECKED + '에 정리했어요. 일정과 절차는 바뀔 수 있으니 공식 안내와 학사 공지를 꼭 확인하세요.';
+  }
+
   // ---------- 화면 전환 ----------
   var lastList = '#/alley';
   function show(id, tab) {
-    ['s-home', 's-alley', 's-place', 's-fav', 's-soon', 's-help'].forEach(function (s) { $(s).hidden = s !== id; });
+    ['s-home', 's-alley', 's-place', 's-fav', 's-soon', 's-help', 's-admin', 's-task'].forEach(function (s) { $(s).hidden = s !== id; });
     document.querySelectorAll('.tabs a').forEach(function (a) {
       if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
@@ -674,6 +804,8 @@
     else if (h[0] === 'fav') { lastList = '#/fav'; show('s-fav', 'fav'); renderFav(); }
     else if (h[0] === 'place') { show('s-place', lastList === '#/fav' ? 'fav' : 'alley'); renderPlace(h[1], h.slice(2).join('/')); }
     else if (h[0] === 'help') { show('s-help', 'home'); }
+    else if (h[0] === 'admin') { show('s-admin', 'home'); renderAdmin(); }
+    else if (h[0] === 'task') { show('s-task', 'home'); renderTask(h[1]); }
     else if (h[0] === 'soon') { $('soon-title').textContent = h[1] || ''; $('soon-en').textContent = 'KNUT → ' + (h[2] || ''); show('s-soon', 'home'); }
     else { show('s-home', 'home'); }
   }
