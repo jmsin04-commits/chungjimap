@@ -9,6 +9,27 @@
 | `index.html` | 사이트 (GitHub Pages로 공개되는 첫 화면) |
 | `신지민_데이터.xlsx` | 맛집·숨은장소 데이터 |
 | `신지민_설명서.txt` | 열 설명과 분류 기준 |
+| `app.html` | KNUT 레일패스 앱 (승차권 디자인, 휴대폰용) |
+| `data.json` | 앱이 읽는 데이터 (엑셀에서 자동 생성) |
+| `make_data.py` | 엑셀 → `data.json` 변환 스크립트 |
+| `manifest.webmanifest`, `icon*` | 휴대폰 홈 화면에 추가할 때 쓰는 앱 정보와 아이콘 |
+
+## KNUT 레일패스 앱
+
+주소: https://jmsin04-commits.github.io/chungjimap/app.html
+
+- 홈: 승강장 3개를 옆으로 넘기며 메뉴 선택 (지금은 골목지도만 운행, 나머지는 준비 중)
+- 골목지도: 맛집/숨은장소, 이름 검색, 지역·태그 필터(여러 개 겹쳐 고르기), 랜덤 발권
+- 상세: 영업시간·가격·위치·태그·추천 수, 지도 링크, 공유, 즐겨찾기
+- 휴대폰 브라우저 메뉴의 "홈 화면에 추가"로 앱처럼 쓸 수 있습니다.
+
+### 데이터 고치는 법
+
+1. `신지민_데이터.xlsx`를 고친다.
+2. `python make_data.py` 실행 (`pip install openpyxl` 필요) → `data.json`이 새로 만들어진다.
+3. 엑셀과 `data.json`을 함께 올린다.
+
+`app.html`은 `data.json`을 불러오기 때문에 파일을 더블클릭해서 열면 동작하지 않습니다. GitHub Pages 주소나 `python -m http.server`로 연 주소에서 확인하세요.
 
 ## 자료 출처
 

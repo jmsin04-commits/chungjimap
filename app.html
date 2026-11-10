@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1E4FA3">
 <title>KNUT 레일패스 · 한국교통대 정보</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="레일패스">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -202,7 +207,7 @@
     </label>
     <div class="chips" id="regions" role="group" aria-label="지역"></div>
     <div class="chips" id="tags" role="group" aria-label="태그로 거르기"></div>
-    <div class="summary"><span id="sum"></span><button id="clear" hidden>필터 초기화</button></div>
+    <div class="summary"><span id="sum"></span><span style="display:flex;gap:6px"><button id="clear" hidden>필터 초기화</button><button id="lucky">랜덤 발권</button></span></div>
     <div class="list" id="list"></div>
   </section>
 
@@ -211,7 +216,10 @@
     <div class="bar">
       <button class="round" id="back" aria-label="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <span class="eyebrow" style="font-size:11px">BOARDING PASS</span>
+      <span style="display:flex;gap:6px">
+      <button class="round" id="share" aria-label="공유하기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button>
       <button class="round" id="fav" aria-label="즐겨찾기" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg></button>
+      </span>
     </div>
     <div id="pass"></div>
     <div class="actions">
@@ -440,6 +448,8 @@
 
     // 목록
     var hit = all.filter(matches);
+    lastHit = hit;
+    $('lucky').hidden = !hit.length;
     var list = $('list'); list.innerHTML = '';
     hit.forEach(function (p) { list.appendChild(placeTicket(p)); });
     if (!hit.length) list.appendChild(el('div', { class: 'empty', text: '조건에 맞는 곳이 없어요. 태그나 지역을 하나 빼보세요.' }));
@@ -452,6 +462,22 @@
     $('clear').hidden = !parts.length;
   }
   function save() { store.set('filter', st); }
+  var lastHit = [];
+  $('lucky').addEventListener('click', function () {
+    if (!lastHit.length) return;
+    var p = lastHit[Math.floor(Math.random() * lastHit.length)];
+    toast(p.name + ' 행 승차권 발권!');
+    location.hash = '#/place/' + encodeURIComponent(p.kind) + '/' + encodeURIComponent(p.name);
+  });
+  $('share').addEventListener('click', function () {
+    if (!current) return;
+    var url = location.href;
+    var text = current.name + ' · ' + (current.region || '') + ' (교통대 골목지도)';
+    if (navigator.share) { navigator.share({ title: current.name, text: text, url: url }).catch(function () {}); return; }
+    try {
+      navigator.clipboard.writeText(text + '\n' + url).then(function () { toast('링크를 복사했어요'); }, function () { toast('복사하지 못했어요'); });
+    } catch (e) { toast('복사하지 못했어요'); }
+  });
 
   // ---------- 상세 ----------
   var current = null;

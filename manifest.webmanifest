@@ -1,0 +1,15 @@
+{
+  "name": "KNUT 레일패스 · 한국교통대 정보",
+  "short_name": "레일패스",
+  "start_url": "app.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1E4FA3",
+  "theme_color": "#1E4FA3",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
