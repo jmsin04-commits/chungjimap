@@ -177,6 +177,9 @@
   .pin { width: 26px; height: 34px; position: relative; }
   .pin i { position: absolute; left: 1px; top: 0; width: 24px; height: 24px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid #fff; box-shadow: 0 2px 6px #00000055; box-sizing: border-box; }
   .gate { padding: 4px 10px; border-radius: 12px; background: var(--ink); color: #fff; font: 700 12px 'Noto Sans KR', sans-serif; white-space: nowrap; box-shadow: 0 2px 6px #00000055; }
+  .report { min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; border: 1.5px dashed #FFFFFF88; color: #fff; font-size: 14px; font-weight: 700; }
+  .report:hover { background: #FFFFFF14; }
+  .report svg { width: 18px; height: 18px; }
   .tels { display: flex; flex-direction: column; padding: 8px 10px 12px; }
   .tel { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 8px; border-radius: 8px; }
   .tel:hover { background: #F1ECE0; }
@@ -260,7 +263,8 @@
       <a class="btn solid" id="maplink" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>지도에서 보기</a>
       <a class="btn" id="searchlink" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>이름으로 검색</a>
     </div>
-    <p class="note">학생들이 조사한 정보예요(2026년 10월 확인).<br>영업시간과 가격은 바뀔 수 있으니 방문 전에 지도에서 확인하세요.</p>
+    <a class="report" id="reportlink" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V4M4 4h12l-2 4 2 4H4"/></svg>정보가 틀렸어요 · 제보하기</a>
+    <p class="note">학생들이 조사한 정보예요(2026년 10월 확인).<br>영업시간과 가격은 바뀔 수 있으니 방문 전에 지도에서 확인하세요.<br>제보는 GitHub 이슈로 접수돼요(GitHub 계정 필요).</p>
   </section>
 
   <!-- 즐겨찾기 -->
@@ -851,7 +855,29 @@
     if (p.map) { ml.href = p.map; ml.removeAttribute('aria-disabled'); }
     else { ml.removeAttribute('href'); ml.setAttribute('aria-disabled', 'true'); }
     $('searchlink').href = 'https://map.naver.com/p/search/' + encodeURIComponent(p.address && p.address.indexOf('충주') >= 0 ? p.name : '충주 ' + p.name);
+    $('reportlink').href = reportUrl(p);
     paintFav();
+  }
+  // 제보: 저장소 GitHub 이슈 작성 화면을 가게 정보가 채워진 채로 엽니다.
+  var REPO = 'https://github.com/jmsin04-commits/chungjimap';
+  function reportUrl(p) {
+    var body = [
+      '## 제보할 장소',
+      '- 이름: ' + p.name,
+      '- 분류: ' + p.kind + ' / ' + (p.region || '지역 정보 없음'),
+      '- 지금 앱에 적힌 영업시간: ' + (p.hours[0] || '정보 없음'),
+      '- 앱 정보 확인한 날: ' + (p.checked || '—'),
+      '',
+      '## 무엇이 틀렸나요? (해당하는 곳에 x)',
+      '- [ ] 영업시간', '- [ ] 휴무일', '- [ ] 가격', '- [ ] 위치', '- [ ] 폐업·이전', '- [ ] 기타',
+      '',
+      '## 바른 정보',
+      '(예: 매주 월요일 휴무로 바뀜, 직접 가서 확인함)',
+      '',
+      '## 확인한 방법과 날짜',
+      '(예: 2026-11-17 직접 방문 / 가게 공지 / 지도 앱)'
+    ].join('\n');
+    return REPO + '/issues/new?title=' + encodeURIComponent('[정보 제보] ' + p.name) + '&body=' + encodeURIComponent(body);
   }
   function paintFav() {
     var on = current && isFav(current);
